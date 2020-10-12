@@ -14,6 +14,8 @@ class Program
         cli.Description = "Sample Program";
         cli.Version = "1.0";
         cli.Copyright = "(c) Sisak";
+        
+        cli.AddFunctionClass(new FunctionClass());
 
         try 
         {
