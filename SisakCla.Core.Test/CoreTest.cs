@@ -53,6 +53,17 @@ namespace SisakCla.Core.Test
             {
                 e = 2;
             }
+
+
+            public double f1 = 0.0;
+            public string[] fArr = null;
+
+            [CliOption("-f")]
+            public void TestF(double f1, string[] fArr) 
+            {
+                this.f1 = f1;
+                this.fArr = fArr;
+            }
         }
 
         [Fact]
@@ -179,6 +190,17 @@ namespace SisakCla.Core.Test
             Cli cli = new Cli(new string[] { "-e3", "ASDF" });
             cli.AddFunctionClass(f);
             Assert.Throws<InvalidCastException>(() => cli.Parse());
+        }
+
+        [Fact]
+        public void TestArray()
+        {
+            FunctionClass f = new FunctionClass();
+            Cli cli = new Cli(new string[] { "-f", (1.0).ToString(), "a", "b", "c" });
+            cli.AddFunctionClass(f);
+            cli.Parse();
+            Assert.Equal(1.0, f.f1);
+            Assert.True(f.fArr.Length == 3);
         }
     }
 }

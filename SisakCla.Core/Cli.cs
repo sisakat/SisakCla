@@ -215,8 +215,23 @@ namespace SisakCla.Core
                 for (int i = 0; i < methodParameters.Length; i++)
                 {
                     Type parameterType = methodParameters[i].ParameterType;
-                    string parameter = strParameters.Length > i ? strParameters[i] : null;
-                    parsedParameters[i] = ParseParameter(parameterType, parameter, i, option);
+                    if (parameterType == typeof(string[])) 
+                    {
+                        if (strParameters.Length > i)
+                        {
+                            List<string> tmp = new List<string>();
+                            for (int j = i; j < strParameters.Length; j++)
+                            {
+                                tmp.Add(strParameters[j]);
+                            }
+                            parsedParameters[i] = tmp.ToArray();
+                        }
+                    } 
+                    else 
+                    {
+                        string parameter = strParameters.Length > i ? strParameters[i] : null;
+                        parsedParameters[i] = ParseParameter(parameterType, parameter, i, option);
+                    }
                 }
 
                 option.Method?.Invoke(option.Base, parsedParameters);
