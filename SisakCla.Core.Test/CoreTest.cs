@@ -14,6 +14,15 @@ namespace SisakCla.Core.Test
             public string c1 = String.Empty;
             public double c2 = 0.0;
 
+            [CliOption("-d1")]
+            public double d1 = -1.0;
+
+            [CliOption("-d2")]
+            public bool d2 { get; set; }
+
+            [CliOption("-e3")]
+            public int e = 0;
+
             [CliOption("-a")]
             public void TestA()
             {
@@ -32,6 +41,18 @@ namespace SisakCla.Core.Test
                 c1 = cParam1;
                 c2 = cParam2;
             }
+
+            [CliOption("-e1", Priority = 1)]
+            public void TestE1() 
+            {
+                e = 1;
+            }
+
+            [CliOption("-e2", Priority = 2)]
+            public void TestE2() 
+            {
+                e = 2;
+            }
         }
 
         [Fact]
@@ -43,7 +64,7 @@ namespace SisakCla.Core.Test
             cli.AddFunctionClass(f);
             cli.Parse();
             Assert.True(f.a);
-            Assert.Equal(f.b, bParam);
+            Assert.Equal(bParam, f.b);
         }
 
         [Fact]
@@ -54,7 +75,7 @@ namespace SisakCla.Core.Test
             Cli cli = new Cli(new string[] { "--beta", bParam });
             cli.AddFunctionClass(f);
             cli.Parse();
-            Assert.Equal(f.b, bParam);
+            Assert.Equal(bParam, f.b);
         }
 
         [Fact]
@@ -66,8 +87,8 @@ namespace SisakCla.Core.Test
             Cli cli = new Cli(new string[] { "--charlie", cParam1, cParam2.ToString() });
             cli.AddFunctionClass(f);
             cli.Parse();
-            Assert.Equal(f.c1, cParam1);
-            Assert.Equal(f.c2, cParam2);
+            Assert.Equal(cParam1, f.c1);
+            Assert.Equal(cParam2, f.c2);
         }
 
         [Fact]
@@ -79,8 +100,8 @@ namespace SisakCla.Core.Test
             Cli cli = new Cli(new string[] { "--charlie", cParam1 });
             cli.AddFunctionClass(f);
             cli.Parse();
-            Assert.Equal(f.c1, cParam1);
-            Assert.Equal(f.c2, cParam2);
+            Assert.Equal(cParam1, f.c1);
+            Assert.Equal(cParam2, f.c2);
         }
 
         [Fact]
@@ -92,8 +113,8 @@ namespace SisakCla.Core.Test
             Cli cli = new Cli(new string[] { "--charlie", cParam1, cParam2.ToString(), "2", "3" });
             cli.AddFunctionClass(f);
             cli.Parse();
-            Assert.Equal(f.c1, cParam1);
-            Assert.Equal(f.c2, cParam2);
+            Assert.Equal(cParam1, f.c1);
+            Assert.Equal(cParam2, f.c2);
         }
 
         [Fact]
@@ -118,6 +139,46 @@ namespace SisakCla.Core.Test
             cli.DefaultTextWriter = tw;
             cli.PrintHelp();
             Assert.True(tw.ToString().Length > 0);
+        }
+
+        [Fact]
+        public void TestD()
+        {
+            FunctionClass f = new FunctionClass();
+            Cli cli = new Cli(new string[] { "-d1", (0.0).ToString() });
+            cli.AddFunctionClass(f);
+            cli.Parse();
+            Assert.Equal(0.0, f.d1);
+        }
+
+        [Fact]
+        public void TestD2()
+        {
+            FunctionClass f = new FunctionClass();
+            Cli cli = new Cli(new string[] { "-d2" });
+            cli.AddFunctionClass(f);
+            Assert.Equal(false, f.d2);
+            cli.Parse();
+            Assert.Equal(true, f.d2);
+        }
+
+        [Fact]
+        public void TestPriority()
+        {
+            FunctionClass f = new FunctionClass();
+            Cli cli = new Cli(new string[] { "-e2", "-e1", "-e3", "3" });
+            cli.AddFunctionClass(f);
+            cli.Parse();
+            Assert.Equal(2, f.e);
+        }
+
+        [Fact]
+        public void TestThrowField()
+        {
+            FunctionClass f = new FunctionClass();
+            Cli cli = new Cli(new string[] { "-e3", "ASDF" });
+            cli.AddFunctionClass(f);
+            Assert.Throws<InvalidCastException>(() => cli.Parse());
         }
     }
 }

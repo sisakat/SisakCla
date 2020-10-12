@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
 using System.IO;
+using System.ComponentModel;
 
 namespace SisakCla.Core
 {
@@ -30,6 +31,13 @@ namespace SisakCla.Core
 
         public void AddFunctionClass<T>(T t)
         {
+            AddMethods(t);
+            AddFields(t);
+            AddProperties(t);
+        }
+
+        private void AddMethods<T>(T t)
+        {
             var methods = ReflectionHelper.GetMethodsWithAttribute(typeof(T), typeof(CliOption));
             foreach (var method in methods)
             {
@@ -40,27 +48,52 @@ namespace SisakCla.Core
             }
         }
 
+        private void AddFields<T>(T t)
+        {
+            var fields = ReflectionHelper.GetFieldsWithAttribute(typeof(T), typeof(CliOption));
+            foreach (var field in fields)
+            {
+                var cliOption = field.GetCustomAttribute<CliOption>();
+                cliOption.Base = t;
+                cliOption.Field = field;
+                _options.Add(cliOption);
+            }
+        }
+
+        private void AddProperties<T>(T t)
+        {
+            var properties = ReflectionHelper.GetPropertiesWithAttribute(typeof(T), typeof(CliOption));
+            foreach (var property in properties)
+            {
+                var cliOption = property.GetCustomAttribute<CliOption>();
+                cliOption.Base = t;
+                cliOption.Property = property;
+                _options.Add(cliOption);
+            }
+        }
+
         [CliOption("-h", LongOption = "--help", Description = "Prints the help text.")]
         public void PrintHelp()
         {
             var textWriter = DefaultTextWriter;
             _options.Sort((x, y) => x.Option.CompareTo(y.Option));
-            textWriter.WriteLine(Description);
-            textWriter.WriteLine(Version);
-            textWriter.WriteLine(Copyright);
+            textWriter.WriteLineIfNotEmpty(Description);
+            textWriter.WriteLineIfNotEmpty(Version);
+            textWriter.WriteLineIfNotEmpty(Copyright);
             textWriter.WriteLine();
             if (_options.Count > 0)
             {
                 textWriter.WriteLine("Parameters:");
             }
-            foreach (var option in _options)
+            foreach (var option in _options.Where(x => !string.IsNullOrEmpty(x.Description)))
             {
                 textWriter.Write($"{option.Option}");
                 if (!String.IsNullOrEmpty(option.LongOption))
                     textWriter.Write($" ({option.LongOption})");
                 if (PrintParameters)
                 {
-                    PrintParameterHelp(textWriter, option.Method.GetParameters());
+                    if (option.Method != null)
+                        PrintParameterHelp(textWriter, option.Method.GetParameters());
                 }
                 textWriter.WriteLine();
                 textWriter.WriteLine($"\t{option.Description}");
@@ -75,7 +108,7 @@ namespace SisakCla.Core
                 if (parameter.HasDefaultValue)
                 {
                     textWriter.Write($" [{parameter.Name}");
-                    if (PrintDefaultValue) 
+                    if (PrintDefaultValue)
                     {
                         textWriter.Write($"={parameter.DefaultValue}");
                     }
@@ -90,41 +123,73 @@ namespace SisakCla.Core
 
         public void Parse()
         {
+            List<Tuple<CliOption, IEnumerable<string>>> options = new List<Tuple<CliOption, IEnumerable<string>>>();
             Queue<string> arguments = new Queue<string>();
             CliOption currentOption = null;
 
             for (int i = 0; i < _args.Length; i++)
             {
                 var argument = _args[i];
-                if (argument.StartsWith("-"))
-                {
-                    CheckAndInvoke(currentOption, arguments);
-                    foreach (var option in _options)
-                    {
-                        if (option.Option == argument || option.LongOption == argument)
-                        {
-                            currentOption = option;
-                            break;
-                        }
-                    }
-                }
-                else
+                if (currentOption != null)
                 {
                     arguments.Enqueue(argument);
                 }
+
+                foreach (var option in _options)
+                {
+                    if (option.Option == argument || option.LongOption == argument)
+                    {
+                        if (currentOption != null)
+                        {
+                            options.Add(new Tuple<CliOption, IEnumerable<string>>(currentOption, arguments.ToList()));
+                            arguments.Clear();
+                        }
+                        currentOption = option;
+                        break;
+                    }
+                }
             }
 
-            CheckAndInvoke(currentOption, arguments);
+            if (currentOption != null)
+            {
+                options.Add(new Tuple<CliOption, IEnumerable<string>>(currentOption, arguments.ToList()));
+            }
+
+            InvokeAll(options);
         }
 
-        private void CheckAndInvoke(CliOption option, Queue<string> parameters)
+        private void InvokeAll(IEnumerable<Tuple<CliOption, IEnumerable<string>>> options)
         {
-            if (option != null)
+            if (options == null || options.Count() == 0)
             {
-                InvokeOption(option, parameters);
-                option = null;
-                parameters.Clear();
+                PrintHelp();
+                return;
             }
+
+            foreach (var item in options.Where(x => x.Item1.Field != null).OrderBy(x => x.Item1.Priority))
+            {
+                CheckAndInvoke(item.Item1, item.Item2);
+            }
+
+            foreach (var item in options.Where(x => x.Item1.Property != null).OrderBy(x => x.Item1.Priority))
+            {
+                CheckAndInvoke(item.Item1, item.Item2);
+            }
+
+            foreach (var item in options.Where(x => x.Item1.Method != null).OrderBy(x => x.Item1.Priority))
+            {
+                CheckAndInvoke(item.Item1, item.Item2);
+            }
+        }
+
+        private void CheckAndInvoke(CliOption option, IEnumerable<string> parameters)
+        {
+            if (option.Method != null)
+                InvokeOptionMethod(option, parameters);
+            if (option.Field != null)
+                InvokeOptionField(option, parameters);
+            if (option.Property != null)
+                InvokeOptionProperty(option, parameters);
         }
 
         const string CAST_ERROR_MESSAGE = "CLI-Option {0} expected parameter {1} of type {2}";
@@ -137,8 +202,9 @@ namespace SisakCla.Core
                 parameter);
         }
 
-        private void InvokeOption(CliOption option, IEnumerable<string> parameters)
+        private void InvokeOptionMethod(CliOption option, IEnumerable<string> parameters)
         {
+            if (option.Method == null) throw new ArgumentException("Method cannot be null");
             string[] strParameters = parameters.ToArray();
             ParameterInfo[] methodParameters = option.Method.GetParameters();
 
@@ -150,96 +216,7 @@ namespace SisakCla.Core
                 {
                     Type parameterType = methodParameters[i].ParameterType;
                     string parameter = strParameters.Length > i ? strParameters[i] : null;
-
-                    switch (Type.GetTypeCode(parameterType))
-                    {
-                        case TypeCode.Object:
-                        case TypeCode.String:
-                            parsedParameters[i] = parameter;
-                            break;
-                        case TypeCode.Int16:
-                            try
-                            {
-                                parsedParameters[i] = Int16.Parse(parameter ?? "0");
-                            }
-                            catch (Exception)
-                            {
-                                throw new InvalidCastException(CreateErrorMessage(option, i, parameterType));
-                            }
-                            break;
-                        case TypeCode.Int32:
-                            try
-                            {
-                                parsedParameters[i] = Int32.Parse(parameter ?? "0");
-                            }
-                            catch (Exception)
-                            {
-                                throw new InvalidCastException(CreateErrorMessage(option, i, parameterType));
-                            }
-                            break;
-                        case TypeCode.Int64:
-                            try
-                            {
-                                parsedParameters[i] = Int64.Parse(parameter ?? "0");
-                            }
-                            catch (Exception)
-                            {
-                                throw new InvalidCastException(CreateErrorMessage(option, i, parameterType));
-                            }
-                            break;
-                        case TypeCode.Double:
-                            try
-                            {
-                                parsedParameters[i] = Double.Parse(parameter ?? "0");
-                            }
-                            catch (Exception)
-                            {
-                                throw new InvalidCastException(CreateErrorMessage(option, i, parameterType));
-                            }
-                            break;
-                        case TypeCode.Boolean:
-                            try
-                            {
-                                parsedParameters[i] = Boolean.Parse(parameter ?? "0");
-                            }
-                            catch (Exception)
-                            {
-                                throw new InvalidCastException(CreateErrorMessage(option, i, parameterType));
-                            }
-                            break;
-                        case TypeCode.Decimal:
-                            try
-                            {
-                                parsedParameters[i] = Decimal.Parse(parameter ?? "0");
-                            }
-                            catch (Exception)
-                            {
-                                throw new InvalidCastException(CreateErrorMessage(option, i, parameterType));
-                            }
-                            break;
-                        case TypeCode.Char:
-                            try
-                            {
-                                parsedParameters[i] = Char.Parse(parameter ?? "");
-                            }
-                            catch (Exception)
-                            {
-                                throw new InvalidCastException(CreateErrorMessage(option, i, parameterType));
-                            }
-                            break;
-                        case TypeCode.DateTime:
-                            try
-                            {
-                                parsedParameters[i] = DateTime.Parse(parameter);
-                            }
-                            catch (Exception)
-                            {
-                                throw new InvalidCastException(CreateErrorMessage(option, i, parameterType));
-                            }
-                            break;
-                        default:
-                            throw new InvalidCastException($"Type {Type.GetTypeCode(parameterType)} not supported");
-                    }
+                    parsedParameters[i] = ParseParameter(parameterType, parameter, i, option);
                 }
 
                 option.Method?.Invoke(option.Base, parsedParameters);
@@ -247,6 +224,128 @@ namespace SisakCla.Core
             else
             {
                 option.Method?.Invoke(option.Base, new object[] { });
+            }
+        }
+
+        private void InvokeOptionField(CliOption option, IEnumerable<string> parameters)
+        {
+            if (option.Field == null) throw new ArgumentException("Field cannot be null");
+            Type fieldType = option.Field.FieldType;
+            if (fieldType == typeof(bool))
+            {
+                option.Field.SetValue(option.Base, true);
+            }
+            else
+            {
+                var element = parameters.FirstOrDefault();
+                if (element != null) 
+                {
+                    var result = ParseParameter(fieldType, element, 0, option);
+                    option.Field.SetValue(option.Base, result);
+                }
+            }
+        }
+
+        private void InvokeOptionProperty(CliOption option, IEnumerable<string> parameters)
+        {
+            if (option.Property == null) throw new ArgumentException("Property cannot be null");
+            Type propertyType = option.Property.PropertyType;
+            if (propertyType == typeof(bool))
+            {
+                option.Property.SetValue(option.Base, true);
+            }
+            else
+            {
+                var element = parameters.FirstOrDefault();
+                if (element != null) 
+                {
+                    var result = ParseParameter(propertyType, element, 0, option);
+                    option.Property.SetValue(option.Base, result);
+                }
+            }
+        }
+
+        private object ParseParameter(Type parameterType, string parameter, int i, CliOption option)
+        {
+            switch (Type.GetTypeCode(parameterType))
+            {
+                case TypeCode.Object:
+                case TypeCode.String:
+                    return parameter;
+                case TypeCode.Int16:
+                    try
+                    {
+                        return Int16.Parse(parameter ?? "0");
+                    }
+                    catch (Exception)
+                    {
+                        throw new InvalidCastException(CreateErrorMessage(option, i, parameterType));
+                    }
+                case TypeCode.Int32:
+                    try
+                    {
+                        return Int32.Parse(parameter ?? "0");
+                    }
+                    catch (Exception)
+                    {
+                        throw new InvalidCastException(CreateErrorMessage(option, i, parameterType));
+                    }
+                case TypeCode.Int64:
+                    try
+                    {
+                        return Int64.Parse(parameter ?? "0");
+                    }
+                    catch (Exception)
+                    {
+                        throw new InvalidCastException(CreateErrorMessage(option, i, parameterType));
+                    }
+                case TypeCode.Double:
+                    try
+                    {
+                        return Double.Parse(parameter ?? "0");
+                    }
+                    catch (Exception)
+                    {
+                        throw new InvalidCastException(CreateErrorMessage(option, i, parameterType));
+                    }
+                case TypeCode.Boolean:
+                    try
+                    {
+                        return Boolean.Parse(parameter ?? "0");
+                    }
+                    catch (Exception)
+                    {
+                        throw new InvalidCastException(CreateErrorMessage(option, i, parameterType));
+                    }
+                case TypeCode.Decimal:
+                    try
+                    {
+                        return Decimal.Parse(parameter ?? "0");
+                    }
+                    catch (Exception)
+                    {
+                        throw new InvalidCastException(CreateErrorMessage(option, i, parameterType));
+                    }
+                case TypeCode.Char:
+                    try
+                    {
+                        return Char.Parse(parameter ?? "");
+                    }
+                    catch (Exception)
+                    {
+                        throw new InvalidCastException(CreateErrorMessage(option, i, parameterType));
+                    }
+                case TypeCode.DateTime:
+                    try
+                    {
+                        return DateTime.Parse(parameter);
+                    }
+                    catch (Exception)
+                    {
+                        throw new InvalidCastException(CreateErrorMessage(option, i, parameterType));
+                    }
+                default:
+                    throw new InvalidCastException($"Type {Type.GetTypeCode(parameterType)} not supported");
             }
         }
     }

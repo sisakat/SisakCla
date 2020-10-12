@@ -16,5 +16,15 @@ namespace SisakCla.Core
         {
             return classType.GetMembers().Where(memberInfo => memberInfo.GetCustomAttributes(attributeType, true).Length > 0);
         }
+
+        public static IEnumerable<PropertyInfo> GetPropertiesWithAttribute(Type classType, Type attributeType) 
+        {
+            return classType.GetProperties().Where(propInfo => propInfo.GetCustomAttributes(attributeType, true).Length > 0);
+        }
+
+        public static IEnumerable<FieldInfo> GetFieldsWithAttribute(Type classType, Type attributeType)
+        {
+            return classType.GetFields().Where(fieldInfo => fieldInfo.GetCustomAttributes(attributeType, true).Length > 0);
+        }
     }
 }
