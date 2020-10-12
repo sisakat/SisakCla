@@ -33,7 +33,7 @@ class FunctionClass
     [CliOption("-f", LongOption = "--flag", Description = "Flag that does something")]
     public bool Flag { get; set; }
 
-    [CliOption("-a", "--add")]
+    [CliOption("-a", LongOption = "--add")]
     public void Add(int param1, double param2)
     {
         Console.WriteLine($"{param1} + {param2} = {param1 + param2}");
@@ -44,6 +44,18 @@ class FunctionClass
 Calling the program:
 
 ```
+> dotnet SampleProgram.dll
+Sample Program
+1.0
+(c) Sisak
+
+Parameters:
+-f (--flag)
+        Flag that does something
+
+-h (--help)
+        Prints the help text.
+        
 > dotnet SampleProgram.dll -a 3 4.5 -f
 3 + 4.5 = 7.5
 ```
