@@ -157,9 +157,9 @@ namespace SisakCla.Core.Test
             FunctionClass f = new FunctionClass();
             Cli cli = new Cli(new string[] { "-d2" });
             cli.AddFunctionClass(f);
-            Assert.Equal(false, f.d2);
+            Assert.False(f.d2);
             cli.Parse();
-            Assert.Equal(true, f.d2);
+            Assert.True(f.d2);
         }
 
         [Fact]
