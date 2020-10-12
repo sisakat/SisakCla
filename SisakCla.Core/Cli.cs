@@ -263,7 +263,10 @@ namespace SisakCla.Core
                     else 
                     {
                         string parameter = strParameters.Length > i ? strParameters[i] : null;
-                        parsedParameters[i] = ParseParameter(parameterType, parameter, i, option);
+                        if (parameter == null && methodParameters[i].HasDefaultValue) 
+                            parsedParameters[i] = methodParameters[i].DefaultValue;
+                        else 
+                            parsedParameters[i] = ParseParameter(parameterType, parameter, i, option);
                     }
                 }
 
