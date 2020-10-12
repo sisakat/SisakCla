@@ -159,15 +159,13 @@ namespace SisakCla.Core
             for (int i = 0; i < _args.Length; i++)
             {
                 var argument = _args[i];
-                if (currentOption != null)
-                {
-                    arguments.Enqueue(argument);
-                }
 
+                bool isOption = false;
                 foreach (var option in _options)
                 {
                     if (option.Option == argument || option.LongOption == argument)
                     {
+                        isOption = true;
                         if (currentOption != null)
                         {
                             options.Add(new Tuple<CliOption, IEnumerable<string>>(currentOption, arguments.ToList()));
@@ -176,6 +174,12 @@ namespace SisakCla.Core
                         currentOption = option;
                         break;
                     }
+                }
+                
+                if (currentOption != null && !isOption)
+                {
+                    arguments.Enqueue(argument);
+                    continue;
                 }
             }
 
