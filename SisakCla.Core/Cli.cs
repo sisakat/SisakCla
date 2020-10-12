@@ -12,14 +12,34 @@ namespace SisakCla.Core
         private string[] _args;
         private List<CliOption> _options;
 
+        /// <summary>
+        /// Brief description or name of the application. Displayed in the help text.
+        /// </summary>
         public string Description { get; set; }
+
+        /// <summary>
+        /// Version of the application. Displayed in the help text.
+        /// </summary>
         public string Version { get; set; }
+
+        /// <summary>
+        /// Copyright notice displayed in the help text.
+        /// </summary>
         public string Copyright { get; set; }
 
-
+        /// <summary>
+        /// Wether parameters are printed in the help text or not.
+        /// </summary>
         public bool PrintParameters { get; set; } = true;
+
+        /// <summary>
+        /// Wether default values of parameters are printed in the help text or not.
+        /// </summary>
         public bool PrintDefaultValue { get; set; } = true;
 
+        /// <summary>
+        /// TextWriter used for printing the help text.
+        /// </summary>
         public TextWriter DefaultTextWriter { get; set; } = Console.Out;
 
         public Cli(string[] args)
@@ -29,6 +49,9 @@ namespace SisakCla.Core
             AddFunctionClass(this);
         }
 
+        /// <summary>
+        /// Function class used for extracting options.
+        /// </summary>
         public void AddFunctionClass<T>(T t)
         {
             AddMethods(t);
@@ -72,6 +95,9 @@ namespace SisakCla.Core
             }
         }
 
+        /// <summary>
+        /// Prints the help text to the DefaultTextWriter
+        /// </summary>
         [CliOption("-h", LongOption = "--help", Description = "Prints the help text.")]
         public void PrintHelp()
         {
@@ -121,6 +147,9 @@ namespace SisakCla.Core
             }
         }
 
+        /// <summary>
+        /// Parsed the command line arguments
+        /// </summary>
         public void Parse()
         {
             List<Tuple<CliOption, IEnumerable<string>>> options = new List<Tuple<CliOption, IEnumerable<string>>>();
