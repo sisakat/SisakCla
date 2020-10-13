@@ -38,6 +38,10 @@ class FunctionClass
     {
         Console.WriteLine($"{param1} + {param2} = {param1 + param2}");
     }
+
+    [CliOption("doSomething", Description = "Does something")]
+    public void DoSomething(int number)
+    { }
 }
 ```
 
@@ -48,6 +52,10 @@ Calling the program:
 Sample Program
 1.0
 (c) Sisak
+
+Arguments:
+doSomething <number>
+        Does something
 
 Parameters:
 -a (--add) <num1> [num2=2.5]
