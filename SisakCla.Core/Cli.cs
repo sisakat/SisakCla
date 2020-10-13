@@ -108,8 +108,8 @@ namespace SisakCla.Core
             textWriter.WriteLineIfNotEmpty(Copyright);
             textWriter.WriteLine();
 
-            PrintArgument(textWriter, _options.Where(x => !x.Option.StartsWith("-")));
-            PrintParameter(textWriter, _options.Where(x => x.Option.StartsWith("-")));
+            PrintArgument(textWriter, _options?.Where(x => !x.Option.StartsWith("-")));
+            PrintParameter(textWriter, _options?.Where(x => x.Option.StartsWith("-")));
         }
 
         private void PrintArgument(TextWriter textWriter, IEnumerable<CliOption> options)
@@ -124,6 +124,7 @@ namespace SisakCla.Core
 
         private void PrintParameter_Impl(string heading, TextWriter textWriter, IEnumerable<CliOption> options)
         {
+            if (options == null) return;
             if (options.Count() > 0)
             {
                 textWriter.WriteLine($"{heading}:");
