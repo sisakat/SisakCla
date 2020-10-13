@@ -107,11 +107,28 @@ namespace SisakCla.Core
             textWriter.WriteLineIfNotEmpty(Version);
             textWriter.WriteLineIfNotEmpty(Copyright);
             textWriter.WriteLine();
-            if (_options.Count > 0)
+
+            PrintArgument(textWriter, _options.Where(x => !x.Option.StartsWith("-")));
+            PrintParameter(textWriter, _options.Where(x => x.Option.StartsWith("-")));
+        }
+
+        private void PrintArgument(TextWriter textWriter, IEnumerable<CliOption> options)
+        {
+            PrintParameter_Impl("Arguments:", textWriter, options);
+        }
+
+        private void PrintParameter(TextWriter textWriter, IEnumerable<CliOption> options)
+        {
+            PrintParameter_Impl("Parameters:", textWriter, options);
+        }
+
+        private void PrintParameter_Impl(string heading, TextWriter textWriter, IEnumerable<CliOption> options)
+        {
+            if (options.Count() > 0)
             {
-                textWriter.WriteLine("Parameters:");
+                textWriter.WriteLine($"{heading}:");
             }
-            foreach (var option in _options.Where(x => !string.IsNullOrEmpty(x.Description)))
+            foreach (var option in options.Where(x => !string.IsNullOrEmpty(x.Description)))
             {
                 textWriter.Write($"{option.Option}");
                 if (!String.IsNullOrEmpty(option.LongOption))
