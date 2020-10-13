@@ -207,7 +207,22 @@ namespace SisakCla.Core
                 options.Add(new Tuple<CliOption, IEnumerable<string>>(currentOption, arguments.ToList()));
             }
 
+            CliOption missing = null;
+            if (!CheckRequiredOptions(options, out missing)) 
+            {
+                throw new MissingRequiredOptionException(missing);
+            }
             InvokeAll(options);
+        }
+
+        private bool CheckRequiredOptions(List<Tuple<CliOption, IEnumerable<string>>> options, out CliOption option)
+        {
+            option = null;
+            var requiredOptions = _options.Where(x => x.Required);
+            if (options == null && requiredOptions.Count() > 0) return false;
+            var optionsMissing = requiredOptions.Where(x => !options.Any(y => y.Item1 == x));
+            option = optionsMissing.FirstOrDefault();
+            return optionsMissing.Count() == 0;
         }
 
         private void InvokeAll(IEnumerable<Tuple<CliOption, IEnumerable<string>>> options)

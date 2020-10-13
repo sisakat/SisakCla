@@ -72,6 +72,18 @@ namespace SisakCla.Core.Test
             }
         }
 
+        class FunctionClass2
+        {
+            [CliOption("-b")]
+            public string field;
+
+            [CliOption("-a", Required = true)]
+            public void Test()
+            {
+
+            }
+        }
+
         [Fact]
         public void TestShortOption()
         {
@@ -216,6 +228,15 @@ namespace SisakCla.Core.Test
             Cli cli = new Cli(new string[] { "gustav" });
             cli.AddFunctionClass(f);
             cli.Parse();
+        }
+
+        [Fact]
+        public void TestRequired()
+        {
+            FunctionClass2 f = new FunctionClass2();
+            Cli cli = new Cli(new string[] { "-b" });
+            cli.AddFunctionClass(f);
+            Assert.Throws<MissingRequiredOptionException>(() => cli.Parse());
         }
     }
 }
