@@ -147,6 +147,7 @@ namespace SisakCla.Core
 
         private void PrintParameterHelp(TextWriter textWriter, ParameterInfo[] parameters)
         {
+            if (parameters == null) return;
             foreach (var parameter in parameters)
             {
                 if (parameter.HasDefaultValue)
