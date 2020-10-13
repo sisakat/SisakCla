@@ -114,12 +114,12 @@ namespace SisakCla.Core
 
         private void PrintArgument(TextWriter textWriter, IEnumerable<CliOption> options)
         {
-            PrintParameter_Impl("Arguments:", textWriter, options);
+            PrintParameter_Impl("Arguments", textWriter, options);
         }
 
         private void PrintParameter(TextWriter textWriter, IEnumerable<CliOption> options)
         {
-            PrintParameter_Impl("Parameters:", textWriter, options);
+            PrintParameter_Impl("Parameters", textWriter, options);
         }
 
         private void PrintParameter_Impl(string heading, TextWriter textWriter, IEnumerable<CliOption> options)
