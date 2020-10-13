@@ -44,7 +44,7 @@ namespace SisakCla.Core
 
         public Cli(string[] args)
         {
-            _args = args;
+            _args = args ?? new string[] {};
             _options = new List<CliOption>();
             AddFunctionClass(this);
         }

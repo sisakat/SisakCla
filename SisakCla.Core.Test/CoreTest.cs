@@ -64,6 +64,12 @@ namespace SisakCla.Core.Test
                 this.f1 = f1;
                 this.fArr = fArr;
             }
+
+            [CliOption("gustav", LongOption = "gustavu", Description = "test")]
+            public void TestG(string test)
+            {
+
+            }
         }
 
         [Fact]
@@ -201,6 +207,15 @@ namespace SisakCla.Core.Test
             cli.Parse();
             Assert.Equal(1.0, f.f1);
             Assert.True(f.fArr.Length == 3);
+        }
+
+        [Fact]
+        public void TestGustav()
+        {
+            FunctionClass f = new FunctionClass();
+            Cli cli = new Cli(new string[] { "gustav" });
+            cli.AddFunctionClass(f);
+            cli.Parse();
         }
     }
 }
