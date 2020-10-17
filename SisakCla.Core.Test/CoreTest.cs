@@ -43,13 +43,13 @@ namespace SisakCla.Core.Test
             }
 
             [CliOption("-e1", Priority = 1)]
-            public void TestE1() 
+            public void TestE1()
             {
                 e = 1;
             }
 
             [CliOption("-e2", Priority = 2)]
-            public void TestE2() 
+            public void TestE2()
             {
                 e = 2;
             }
@@ -59,7 +59,7 @@ namespace SisakCla.Core.Test
             public string[] fArr = null;
 
             [CliOption("-f")]
-            public void TestF(double f1, string[] fArr) 
+            public void TestF(double f1, string[] fArr)
             {
                 this.f1 = f1;
                 this.fArr = fArr;

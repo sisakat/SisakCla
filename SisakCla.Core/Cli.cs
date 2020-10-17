@@ -44,7 +44,7 @@ namespace SisakCla.Core
 
         public Cli(string[] args)
         {
-            _args = args ?? new string[] {};
+            _args = args ?? new string[] { };
             _options = new List<CliOption>();
             AddFunctionClass(this);
         }
@@ -194,7 +194,7 @@ namespace SisakCla.Core
                         break;
                     }
                 }
-                
+
                 if (currentOption != null && !isOption)
                 {
                     arguments.Enqueue(argument);
@@ -208,7 +208,7 @@ namespace SisakCla.Core
             }
 
             CliOption missing = null;
-            if (!CheckRequiredOptions(options, out missing)) 
+            if (!CheckRequiredOptions(options, out missing))
             {
                 throw new MissingRequiredOptionException(missing);
             }
@@ -282,7 +282,7 @@ namespace SisakCla.Core
                 for (int i = 0; i < methodParameters.Length; i++)
                 {
                     Type parameterType = methodParameters[i].ParameterType;
-                    if (parameterType == typeof(string[])) 
+                    if (parameterType == typeof(string[]))
                     {
                         if (strParameters.Length > i)
                         {
@@ -293,13 +293,13 @@ namespace SisakCla.Core
                             }
                             parsedParameters[i] = tmp.ToArray();
                         }
-                    } 
-                    else 
+                    }
+                    else
                     {
                         string parameter = strParameters.Length > i ? strParameters[i] : null;
-                        if (parameter == null && methodParameters[i].HasDefaultValue) 
+                        if (parameter == null && methodParameters[i].HasDefaultValue)
                             parsedParameters[i] = methodParameters[i].DefaultValue;
-                        else 
+                        else
                             parsedParameters[i] = ParseParameter(parameterType, parameter, i, option);
                     }
                 }
@@ -323,7 +323,7 @@ namespace SisakCla.Core
             else
             {
                 var element = parameters.FirstOrDefault();
-                if (element != null) 
+                if (element != null)
                 {
                     var result = ParseParameter(fieldType, element, 0, option);
                     option.Field.SetValue(option.Base, result);
@@ -342,7 +342,7 @@ namespace SisakCla.Core
             else
             {
                 var element = parameters.FirstOrDefault();
-                if (element != null) 
+                if (element != null)
                 {
                     var result = ParseParameter(propertyType, element, 0, option);
                     option.Property.SetValue(option.Base, result);
